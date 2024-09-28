@@ -27,7 +27,11 @@ io.on('connection', (socket) => {
     socket.emit('welcome', `Welcome to the server, ${socket.id}`);
     socket.broadcast.emit('welcome', `${socket.id} Welcome to the server`);
 
-    
+    socket.on('message', (data)=>{
+        console.log(data);
+        // io.emit('message', data);
+    })
+
     socket.on('disconnect', () => {
         console.log('User disconnected');
     });
