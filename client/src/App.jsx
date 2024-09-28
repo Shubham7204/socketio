@@ -8,20 +8,12 @@ const App = () => {
   const [socketID, setSocketID] = useState('');
   const [targetSocketID, setTargetSocketID] = useState('');
   const [joinedRoom, setJoinedRoom] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const socket = useMemo(() => io('http://localhost:3000', {
-    withCredentials: true
-  }), []);
+  const socket = useMemo(() => io('http://localhost:3000'), []);
 
   useEffect(() => {
     socket.on('connect', () => {
       console.log('Connected to server', socket.id);
       setSocketID(socket.id);
-    });
-
-    socket.on('connect_error', (error) => {
-      console.log('Connection error:', error.message);
-      setIsLoggedIn(false);
     });
 
     socket.on('receive-message', (data) => {
@@ -38,23 +30,6 @@ const App = () => {
       socket.disconnect();
     };
   }, [socket]);
-
-  const handleLogin = async () => {
-    try {
-      const response = await fetch('http://localhost:3000/login', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      if (response.ok) {
-        setIsLoggedIn(true);
-        console.log('Logged in successfully');
-      } else {
-        console.error('Login failed');
-      }
-    } catch (error) {
-      console.error('Error during login:', error);
-    }
-  };
 
   const handleChange = (e) => {
     setMessage(e.target.value);
@@ -89,17 +64,6 @@ const App = () => {
     }
     setMessage('');
   };
-
-  if (!isLoggedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-red-600 text-4xl text-center m-4">Learning Socket.io</h1>
-        <button onClick={handleLogin} className="bg-blue-500 text-white px-4 py-2 rounded">
-          Login
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
