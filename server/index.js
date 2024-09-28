@@ -25,12 +25,11 @@ io.on('connection', (socket) => {
     console.log('ID:', socket.id);
 
     socket.emit('welcome', `Welcome to the server, ${socket.id}`);
-    socket.broadcast.emit('welcome', `${socket.id} Welcome to the server`);
 
-    socket.on('message', (data)=>{
-        console.log(data);
-        // io.emit('message', data);
-    })
+    socket.on('message', (data) => {
+        console.log(`Message from ${socket.id}: ${data}`);
+        socket.broadcast.emit('receive-message', data); // Send to all except sender
+    });
 
     socket.on('disconnect', () => {
         console.log('User disconnected');

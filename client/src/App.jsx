@@ -1,27 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { io } from 'socket.io-client';
 
 const App = () => {
   const [message, setMessage] = useState('');
-  const socket = io('http://localhost:3000');
+  const [receivedMessages, setReceivedMessages] = useState([]); // State to hold received messages
+  const socket = useMemo(() => io('http://localhost:3000'), []); // Correct socket initialization
 
   useEffect(() => {
     socket.on('connect', () => {
       console.log('Connected to server', socket.id);
     });
 
+    socket.on('receive-message', (data) => {
+      console.log('Received message:', data);
+      setReceivedMessages((prevMessages) => [...prevMessages, data]); // Add new message to the list
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [socket]);
 
   const handleChange = (e) => {
-    setMessage(e.target.value); // Update the message state
+    setMessage(e.target.value);
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent the form from reloading the page
-    console.log('Message submitted:', message); // Log the message for now
+    e.preventDefault();
+    socket.emit('message', message); // Emit the message to the server
     setMessage(''); // Clear the input after submission
   };
 
@@ -41,6 +47,17 @@ const App = () => {
           Send Message
         </button>
       </form>
+
+      <div className="mt-6">
+        <h2 className="text-2xl">Messages:</h2>
+        <ul>
+          {receivedMessages.map((msg, index) => (
+            <li key={index} className="mt-2 text-lg">
+              {msg}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };
