@@ -3,17 +3,23 @@ import { io } from 'socket.io-client';
 
 const App = () => {
   const [message, setMessage] = useState('');
-  const [receivedMessages, setReceivedMessages] = useState([]); // State to hold received messages
-  const socket = useMemo(() => io('http://localhost:3000'), []); // Correct socket initialization
+  const [receivedMessages, setReceivedMessages] = useState([]);
+  const [room, setRoom] = useState('');
+  const [socketID, setSocketID] = useState('');
+  const socket = useMemo(() => io('http://localhost:3000'), []);
 
   useEffect(() => {
     socket.on('connect', () => {
       console.log('Connected to server', socket.id);
     });
 
+    socket.on('user-id', (id) => {
+      setSocketID(id); // Set the socket ID for the user
+    });
+
     socket.on('receive-message', (data) => {
       console.log('Received message:', data);
-      setReceivedMessages((prevMessages) => [...prevMessages, data]); // Add new message to the list
+      setReceivedMessages((prevMessages) => [...prevMessages, data]); 
     });
 
     return () => {
@@ -25,15 +31,20 @@ const App = () => {
     setMessage(e.target.value);
   };
 
+  const handleRoomChange = (e) => {
+    setRoom(e.target.value);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    socket.emit('message', message); // Emit the message to the server
+    socket.emit('message', { message, to: room }); // Emit the message to the specified user
     setMessage(''); // Clear the input after submission
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <h1 className="text-red-600 text-4xl text-center m-4">Learning Socket.io</h1>
+      <h2 className="text-lg">Your Socket ID: {socketID}</h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-4">
         <input
@@ -41,6 +52,13 @@ const App = () => {
           placeholder="Type your message..."
           value={message}
           onChange={handleChange}
+          className="border border-gray-300 rounded px-4 py-2"
+        />
+        <input
+          type="text"
+          placeholder="Enter recipient Socket ID..."
+          value={room}
+          onChange={handleRoomChange}
           className="border border-gray-300 rounded px-4 py-2"
         />
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
