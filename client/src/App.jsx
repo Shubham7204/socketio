@@ -6,18 +6,24 @@ const App = () => {
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [room, setRoom] = useState('');
   const [socketID, setSocketID] = useState('');
-  const [targetSocketID, setTargetSocketID] = useState(''); // For sending message to a specific socket ID
+  const [targetSocketID, setTargetSocketID] = useState('');
+  const [joinedRoom, setJoinedRoom] = useState('');
   const socket = useMemo(() => io('http://localhost:3000'), []);
 
   useEffect(() => {
     socket.on('connect', () => {
       console.log('Connected to server', socket.id);
-      setSocketID(socket.id); // Set the user's socket ID
+      setSocketID(socket.id);
     });
 
     socket.on('receive-message', (data) => {
       console.log('Received message:', data);
       setReceivedMessages((prevMessages) => [...prevMessages, data]);
+    });
+
+    socket.on('room-joined', (roomName) => {
+      console.log(`Successfully joined room: ${roomName}`);
+      setJoinedRoom(roomName);
     });
 
     return () => {
@@ -40,26 +46,30 @@ const App = () => {
   const handleJoinRoom = (e) => {
     e.preventDefault();
     socket.emit('join-room', room);
-    console.log(`Joined room: ${room}`);
-    setRoom(''); // Clear the room input after joining
+    console.log(`Requested to join room: ${room}`);
+    setRoom('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const data = { message, room }; // Emit the message to the specified room
     if (targetSocketID) {
-      // If a target socket ID is provided, send the message to that specific socket
       socket.emit('message-to-socket', { message, targetSocketID });
+      console.log(`Sent message to socket: ${targetSocketID}`);
+    } else if (joinedRoom) {
+      socket.emit('message-to-room', { message, room: joinedRoom });
+      console.log(`Sent message to room: ${joinedRoom}`);
     } else {
-      socket.emit('message', data); // Send message to the room if no target is specified
+      socket.emit('broadcast-message', { message });
+      console.log('Sent broadcast message');
     }
-    setMessage(''); // Clear the input after submission
+    setMessage('');
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <h1 className="text-red-600 text-4xl text-center m-4">Learning Socket.io</h1>
       <h2 className="text-lg">Your Socket ID: {socketID}</h2>
+      {joinedRoom && <h3 className="text-lg">Current Room: {joinedRoom}</h3>}
 
       <form onSubmit={handleJoinRoom} className="flex flex-col items-center space-y-4">
         <input

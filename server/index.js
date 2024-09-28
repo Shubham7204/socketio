@@ -23,22 +23,27 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
     console.log('User connected');
     console.log('ID:', socket.id);
-
     socket.emit('user-id', socket.id);
 
     socket.on('join-room', (room) => {
         socket.join(room);
         console.log(`User ${socket.id} joined room: ${room}`);
+        socket.emit('room-joined', room);
     });
 
-    socket.on('message', (data) => {
-        console.log(`Message from ${socket.id} to room: ${data.room}`);
-        io.to(data.room).emit('receive-message', data.message); // Send to specified room
+    socket.on('message-to-room', ({ message, room }) => {
+        console.log(`Message from ${socket.id} to room: ${room}`);
+        io.to(room).emit('receive-message', message);
     });
 
     socket.on('message-to-socket', ({ message, targetSocketID }) => {
         console.log(`Message from ${socket.id} to ${targetSocketID}: ${message}`);
-        socket.to(targetSocketID).emit('receive-message', message); // Send message to a specific socket ID
+        io.to(targetSocketID).emit('receive-message', message);
+    });
+
+    socket.on('broadcast-message', ({ message }) => {
+        console.log(`Broadcast message from ${socket.id}: ${message}`);
+        socket.broadcast.emit('receive-message', message);
     });
 
     socket.on('disconnect', () => {
